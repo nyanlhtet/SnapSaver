@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SnapSaver</title>
+  <style>
+    :root {
+      --primary: #007AFF;
+      --danger: #FF3B30;
+      --surface: #F6F6F7;
+      --text: #1C1C1E;
+      --border: #E5E5EA;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      max-width: 320px;
+      margin: 0 auto;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .app-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .path-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #666;
+      background: var(--surface);
+      padding: 6px 8px;
+      border-radius: 6px;
+      margin: 8px 0;
+      word-break: break-all;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      margin: 4px 0;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #E5E5EA;
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 8px 0;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .checkbox {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--primary);
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .button-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="file-prompt">
+    <div class="app-header">
+      <h1 class="app-title">New Screenshot</h1>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">File Name</h2>
+      <div class="path-display" id="file-name">screenshot.png</div>
+      <input type="text" id="new-name" class="input-field" placeholder="Enter new filename">
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Keep/Delete</h2>
+      <div class="path-display" id="save-path">~/Desktop/Screenshots</div>
+      <div class="button-stack">
+      <button id="save-btn" class="btn btn-primary">✓ Keep</button>
+      <button id="delete-btn" class="btn btn-danger">🗑️ Delete</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Copy</h2>
+      <div class="path-display" id="copy-path">~/Documents/Screenshots</div>
+      
+      <div class="button-stack">
+        <button id="default-copy-btn" class="btn btn-secondary">📁 Copy</button>
+        <button id="copy-btn" class="btn btn-secondary">📁 New Folder</button>
+      </div>
+
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="update-default" class="checkbox">
+          (New Folder) Set as default
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="delete-after-copy" class="checkbox">
+          Delete after copying
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings" class="hidden">
+    <div class="app-header">
+      <h1 class="app-title">SnapSaver Settings</h1>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 8px;">Default Save Folder</h4>
+      <div class="path-display" id="settings-save-path">No folder selected</div>
+      <button id="select-save-folder" class="btn btn-primary">📂 Select Save Folder</button>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 8px;">Default Copy Folder</h4>
+      <div class="path-display" id="settings-copy-path">No folder selected</div>
+      <button id="select-copy-folder" class="btn btn-primary">📂 Set Copy Folder</button>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom: 8px;">Quick Guide</h4>
+      <ol style="padding-left: 16px; font-size: 12px; color: #666;">
+        <li>Choose where macOS saves screenshots</li>
+        <li>SnapSaver watches for new files</li>
+        <li>When a new file appears:
+          <ul style="margin: 4px 0 0 16px;">
+            <li>Delete unwanted screenshots</li>
+            <li>Rename for organization</li>
+            <li>Move or copy to other folders</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

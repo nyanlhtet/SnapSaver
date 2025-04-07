@@ -1,0 +1,23 @@
+{
+  "name": "snapsaver",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "screenshot and screen recording workflow automation",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "IS_DEBUG=true electron ."
+  },
+  "author": "nyanlin.tech@gmail.com",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "latest",
+    "electron-reloader": "^1.2.3"
+  },
+  "dependencies": {
+    "electron": "latest",
+    "electron-store": "^8.1.0",
+    "chokidar": "^4.0.3"
+  }
+}
