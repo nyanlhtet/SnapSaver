@@ -95,14 +95,19 @@ function createWindow() {
 function createTray() {
   try {
     console.log("Creating tray...");
-    const icon = nativeImage.createFromPath(
-      path.join(__dirname, "mov-file-format.png")
+
+    let icon = nativeImage.createFromPath(
+      path.join(__dirname, "save-in-folder.png")
     );
 
-    const trayIcon = icon.resize({ width: 16, height: 16 });
+    icon = icon.resize({
+      width: 18,
+      height: 18,
+    });
 
-    tray = new Tray(trayIcon);
-    tray.setToolTip("SnapSaver");
+    icon.setTemplateImage(true);
+
+    tray = new Tray(icon);
 
     const contextMenu = Menu.buildFromTemplate([
       {
@@ -141,10 +146,10 @@ function showWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
   const windowBounds = window.getBounds();
-  
+
   const x = Math.round(width / 2 - windowBounds.width / 2);
   const y = Math.round(height / 2 - windowBounds.height / 2);
-  
+
   window.setPosition(x, y, false);
   window.show();
   window.focus();
@@ -152,7 +157,7 @@ function showWindow() {
 
 function restartWatcher() {
   const savePath = store.get("savePath");
-  
+
   if (savePath) {
     console.log("Setting up watcher for save path:", savePath);
     setupWatcher(savePath);
@@ -305,9 +310,9 @@ ipcMain.handle("file:save", async (_event, options) => {
 
     const ext = path.extname(sourcePath);
     const sourceDir = path.dirname(sourcePath);
-    
+
     const cleanName = newName.replace(/\.[^/.]+$/, "");
-    
+
     const newSourcePath = path.join(sourceDir, `${cleanName}${ext}`);
     const newCopyPath = customCopyPath
       ? path.join(customCopyPath, `${cleanName}${ext}`)
