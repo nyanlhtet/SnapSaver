@@ -7,7 +7,6 @@ const {
   Menu,
   Notification,
   globalShortcut,
-  shell,
   nativeImage,
   screen,
 } = require("electron");
@@ -28,7 +27,7 @@ let recentlyProcessedFiles = new Set();
 
 if (process.env.IS_DEBUG === "true") {
   try {
-    app.on('before-quit', () => {
+    app.on("before-quit", () => {
       if (tray) {
         tray.destroy();
         tray = null;
@@ -43,16 +42,16 @@ if (process.env.IS_DEBUG === "true") {
       }
     });
 
-    window.webContents.on('console-message', (event, level, message) => {
-      if (message.includes('Autofill.setAddresses')) {
+    window.webContents.on("console-message", (event, level, message) => {
+      if (message.includes("Autofill.setAddresses")) {
         event.preventDefault();
       }
     });
-  
+
     require("electron-reloader")(module, {
       debug: true,
       watchRenderer: true,
-      stopOnError: true
+      stopOnError: true,
     });
   } catch (err) {
     console.log("Error enabling hot reload:", err);
@@ -64,7 +63,7 @@ function createWindow() {
     console.log("Creating window...");
     window = new BrowserWindow({
       width: 320,
-      height: 600,
+      height: 650,
       show: false,
       frame: false,
       resizable: false,
@@ -80,9 +79,10 @@ function createWindow() {
     window.loadFile("index.html");
 
     // if (isDebug) {
-  //   window.webContents.openDevTools({ mode: "detach" });
-  // }
-    window.on('blur', () => {
+    //   window.webContents.openDevTools({ mode: "detach" });
+    // }
+
+    window.on("blur", () => {
       window.hide();
     });
 
@@ -95,13 +95,14 @@ function createWindow() {
 function createTray() {
   try {
     console.log("Creating tray...");
-    const icon = nativeImage.createFromPath(path.join(__dirname, 'mov-file-format.png'));
-    
+    const icon = nativeImage.createFromPath(
+      path.join(__dirname, "mov-file-format.png")
+    );
+
     const trayIcon = icon.resize({ width: 16, height: 16 });
-    
+
     tray = new Tray(trayIcon);
-    tray.setToolTip('SnapSaver');
-    console.log("Tray created successfully");
+    tray.setToolTip("SnapSaver");
 
     const contextMenu = Menu.buildFromTemplate([
       {
@@ -129,49 +130,34 @@ function createTray() {
     });
 
     tray.setContextMenu(contextMenu);
-    console.log("Tray setup completed");
   } catch (error) {
     console.error("Error creating tray:", error);
   }
 }
 
 function showWindow() {
-  if (!window || !tray) return;
+  if (!window) return;
 
-  const trayBounds = tray.getBounds();
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
   const windowBounds = window.getBounds();
-
-  const display = screen.getDisplayNearestPoint({
-    x: trayBounds.x,
-    y: trayBounds.y
-  });
-
-  let x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2));
-  let y = Math.round(trayBounds.y - windowBounds.height - 4);
-
-  if (x < display.bounds.x) {
-    x = display.bounds.x;
-  } else if (x + windowBounds.width > display.bounds.x + display.bounds.width) {
-    x = display.bounds.x + display.bounds.width - windowBounds.width;
-  }
-
-  if (y < display.bounds.y) {
-    y = trayBounds.y + trayBounds.height + 4;
-  }
-
+  
+  const x = Math.round(width / 2 - windowBounds.width / 2);
+  const y = Math.round(height / 2 - windowBounds.height / 2);
+  
   window.setPosition(x, y, false);
   window.show();
   window.focus();
 }
 
 function restartWatcher() {
-  console.log("Restarting watcher...");
   const savePath = store.get("savePath");
+  
   if (savePath) {
     console.log("Setting up watcher for save path:", savePath);
     setupWatcher(savePath);
   } else {
-    console.log("No save path set, watcher not started");
+    console.log("No save path set, watcher not started...");
     if (watcher) {
       console.log("Closing existing watcher");
       watcher.close();
@@ -319,9 +305,12 @@ ipcMain.handle("file:save", async (_event, options) => {
 
     const ext = path.extname(sourcePath);
     const sourceDir = path.dirname(sourcePath);
-    const newSourcePath = path.join(sourceDir, `${newName}${ext}`);
+    
+    const cleanName = newName.replace(/\.[^/.]+$/, "");
+    
+    const newSourcePath = path.join(sourceDir, `${cleanName}${ext}`);
     const newCopyPath = customCopyPath
-      ? path.join(customCopyPath, `${newName}${ext}`)
+      ? path.join(customCopyPath, `${cleanName}${ext}`)
       : null;
 
     console.log("Processing file:", {
@@ -349,8 +338,6 @@ ipcMain.handle("file:save", async (_event, options) => {
       if (newCopyPath) recentlyProcessedFiles.delete(newCopyPath);
     }, 3000);
 
-    const finalPath = newCopyPath || newSourcePath;
-
     const notification = new Notification({
       title: "Success",
       body: newCopyPath
@@ -358,11 +345,6 @@ ipcMain.handle("file:save", async (_event, options) => {
             newCopyPath
           )}`
         : `File renamed to ${path.basename(newSourcePath)}`,
-    });
-
-    notification.on("click", () => {
-      console.log("Opening file in Finder:", finalPath);
-      shell.showItemInFolder(finalPath);
     });
 
     notification.show();
@@ -397,25 +379,28 @@ ipcMain.handle("file:delete", async (_event, filePath) => {
   }
 });
 
-app.whenReady().then(() => {
-  createWindow();
-  createTray();
+app
+  .whenReady()
+  .then(() => {
+    createWindow();
+    createTray();
 
-  if (process.platform === 'darwin') {
-    app.dock.hide();
-  }
-
-  console.log("Initializing watcher on app start");
-  restartWatcher();
-
-  globalShortcut.register("CommandOrControl+Shift+I", () => {
-    if (window) {
-      window.webContents.openDevTools({ mode: "detach" });
+    if (process.platform === "darwin") {
+      app.dock.hide();
     }
+
+    console.log("Initializing watcher on app start");
+    restartWatcher();
+
+    globalShortcut.register("CommandOrControl+Shift+I", () => {
+      if (window) {
+        window.webContents.openDevTools({ mode: "detach" });
+      }
+    });
+  })
+  .catch((error) => {
+    console.error("Error during app initialization:", error);
   });
-}).catch(error => {
-  console.error("Error during app initialization:", error);
-});
 
 app.on("before-quit", () => {
   if (watcher) {

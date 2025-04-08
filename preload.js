@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFile: (options) => ipcRenderer.invoke('file:save', options),
   deleteFile: (path) => ipcRenderer.invoke('file:delete', path),
   onShowFilePrompt: (callback) => ipcRenderer.on('show-file-prompt', callback),
-  setCopyPath: (path) => ipcRenderer.invoke('config:setCopyPath', path)
+  setCopyPath: (path) => ipcRenderer.invoke('config:setCopyPath', path),
+  hideWindow: () => ipcRenderer.invoke('hide-window')
 })

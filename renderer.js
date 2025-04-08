@@ -127,9 +127,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     settings: document.getElementById("settings")?.className,
   });
 
-  let selectedSavePath = null;
-
   const saveBtn = document.getElementById("save-btn");
+
   if (saveBtn) {
     saveBtn.addEventListener("click", async () => {
       if (!currentFile) return;
@@ -143,6 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const savePath = await window.electronAPI.getSavePath();
+        
         if (!savePath) {
           console.log("No default save path set");
           return;
@@ -155,8 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           keepOriginal: false,
         });
 
-        toggleViews(false);
-        currentFile = null;
+        await handleCopySuccess(savePath, newName);
       } catch (error) {
         console.error("Error in keep/rename handler:", error);
       }
@@ -164,6 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const defaultCopyBtn = document.getElementById("default-copy-btn");
+  
   if (defaultCopyBtn) {
     defaultCopyBtn.addEventListener("click", async () => {
       if (!currentFile) return;
@@ -194,40 +194,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const copyBtn = document.getElementById("copy-btn");
+  
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
-      if (!currentFile) return;
-      try {
-        const copyPath = await window.electronAPI.selectCopyFolder();
-        if (!copyPath) return;
-
-        const newName =
-          document.getElementById("new-name")?.value || currentFile.filename;
-        const updateDefault =
-          document.getElementById("update-default")?.checked || false;
-        const deleteAfterCopy =
-          document.getElementById("delete-after-copy")?.checked || false;
-
-        await window.electronAPI.saveFile({
-          sourcePath: currentFile.path,
-          newName,
-          keepOriginal: !deleteAfterCopy,
-          customCopyPath: copyPath,
-        });
-
-        if (updateDefault) {
-          await window.electronAPI.setCopyPath(copyPath);
-          await updatePaths();
+      if (currentFile) {
+        const path = await window.electronAPI.selectCopyFolder();
+        if (path) {
+          await handleCopySuccess(path, currentFile.filename);
+          document.getElementById('file-prompt').classList.add('hidden');
+          currentFile = null;
+          await window.electronAPI.hideWindow();
         }
-
-        await handleCopySuccess(copyPath, newName);
-      } catch (error) {
-        console.error("Error in copy handler:", error);
       }
     });
   }
 
   const deleteBtn = document.getElementById("delete-btn");
+  
   if (deleteBtn) {
     deleteBtn.addEventListener("click", async () => {
       console.log("Delete button clicked, currentFile:", currentFile);
@@ -235,9 +218,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       try {
         await window.electronAPI.deleteFile(currentFile.path);
-
         toggleViews(false);
         currentFile = null;
+        await window.electronAPI.hideWindow();
       } catch (error) {
         console.error("Error in delete handler:", error);
       }
@@ -292,13 +275,12 @@ console.log("Available electronAPI methods:", Object.keys(window.electronAPI));
 
 document.addEventListener("DOMContentLoaded", updateButtonTexts);
 
-function isGoogleDrivePath(path) {
-  return path && path.includes("GoogleDrive");
-}
-
 async function handleCopySuccess(copyPath, newName) {
   console.log("handleCopySuccess called with:", { copyPath, newName });
-
+  
+  document.getElementById('file-prompt').classList.add('hidden');
   toggleViews(false);
   currentFile = null;
+  
+  await window.electronAPI.hideWindow();
 }
